@@ -32,6 +32,41 @@
             "backgroundColor": "#FFFCF9"
           }
         }
+      ] ,
+     [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Inter",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/Inter_18pt-Bold.ttf",
+                    "weight": 600
+                  }, 
+                  {
+                    "path": "./assets/fonts/Inter_18pt-Regular.ttf",
+                    "weight": 400
+                  }
+                ]
+              },
+              {
+                "fontFamily": "Lora",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/Lora-BoldItalic.ttf",
+                    "weight": 700,
+                    "style": "italic"
+                  }
+                ]
+              }
+            ]
+          },
+          "ios": {
+            "fonts": ["./assets/fonts/Lora-BoldItalic.ttf", "./assets/fonts/Inter_18pt-Bold.ttf", "./assets/fonts/Inter_18pt-Regular.ttf"]
+          }
+        }
       ]
     ],
     "experiments": {
