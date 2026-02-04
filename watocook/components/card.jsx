@@ -37,8 +37,12 @@ export default function Card({
     accessibilityRole='link'
     accessibilityLabel={`view the recipe of ${title}`}>
       <ImageBackground source={image} style={styles.image} imageStyle={styles.imageStyle}>
-        <TouchableOpacity onPress={toggleBookmark} style={styles.bookmark} accessibilityRole="button" accessibilityLabel={bookmarked ? `Remove bookmark on ${title} ` : `add bookmark on ${title}`}>
-         <Bookmark size={24} color={Colors.background} fill={bookmarked ? Colors.background : undefined}/>
+          <View style={styles.exploreOverlay} pointerEvents="none">
+                    <View style={styles.exploreOverlayTop} />
+                    <View style={styles.exploreOverlayBottom} />
+                  </View>
+        <TouchableOpacity onPress={toggleBookmark} style={styles.bookmark}  accessibilityLabel={bookmarked ? `Remove bookmark on ${title} ` : `add bookmark on ${title}`}>
+         <Bookmark size={24} color={Colors.background} fill={bookmarked ? Colors.background : 'transparent'}/>
         </TouchableOpacity>
 
         <View style={styles.info}>
@@ -63,6 +67,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS,
     overflow: 'hidden',
     marginBottom: Spacing.large / 2,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     boxShadow: '0px 4px 8px rgba(9, 9, 9, 0.48)',
     elevation: 3,
   },
@@ -81,27 +86,22 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   info: {
     padding: Spacing.medium,
-    backgroundColor: 'rgba(0,0,0,0.0)',
   },
   title: {
     color: Colors.background,
     fontSize: FontSizes.large,
     fontFamily: 'Inter',
-    fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
+    fontWeight: '400',
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
     gap: 4,
   },
   metaText: {
@@ -109,5 +109,30 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.small,
     fontFamily: 'Inter',
     fontWeight: '400'
+  },
+   exploreOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  exploreOverlayTop: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: '50%',
+    backgroundColor: 'rgba(0,0,0,0.06)',
+  },
+  exploreOverlayBottom: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.20)',
   },
 });

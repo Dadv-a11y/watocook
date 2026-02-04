@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     bottom: SEGMENT_PADDING,
     backgroundColor: Colors.primary,
     borderRadius: (DEFAULT_HEIGHT - SEGMENT_PADDING * 2) / 2,
-    boxShadow: '0px 0px 12px rgba(249, 57, 67, 0.18)',
+    boxShadow: '0px 0px 12px rgba(249, 57, 67, 0.7)',
     elevation: 6,
   },
 });

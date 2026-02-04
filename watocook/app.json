@@ -13,7 +13,8 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.dadv14.watocook"
     },
     "web": {
       "output": "static",
@@ -32,8 +33,8 @@
             "backgroundColor": "#FFFCF9"
           }
         }
-      ] ,
-     [
+      ],
+      [
         "expo-font",
         {
           "android": {
@@ -44,7 +45,7 @@
                   {
                     "path": "./assets/fonts/Inter_18pt-Bold.ttf",
                     "weight": 600
-                  }, 
+                  },
                   {
                     "path": "./assets/fonts/Inter_18pt-Regular.ttf",
                     "weight": 400
@@ -64,7 +65,11 @@
             ]
           },
           "ios": {
-            "fonts": ["./assets/fonts/Lora-BoldItalic.ttf", "./assets/fonts/Inter_18pt-Bold.ttf", "./assets/fonts/Inter_18pt-Regular.ttf"]
+            "fonts": [
+              "./assets/fonts/Lora-BoldItalic.ttf",
+              "./assets/fonts/Inter_18pt-Bold.ttf",
+              "./assets/fonts/Inter_18pt-Regular.ttf"
+            ]
           }
         }
       ]
@@ -72,6 +77,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4f9359c1-7665-474a-a0eb-4eee059a2bac"
+      }
+    },
+    "owner": "dadv14"
   }
 }

@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   buttonActive: {
     backgroundColor: Colors.primary,
     borderWidth: 0,
-    boxShadow: '0px 8px 16px rgba(249, 57, 67, 0.18)',
+    boxShadow: '0px 0px 8px rgba(249, 57, 67, 0.7)',
     elevation: 8,
   },
   buttonInactive: {
