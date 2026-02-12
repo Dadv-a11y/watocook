@@ -22,7 +22,6 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
 
-
 export const GoogleSigninConfig = GoogleSignin.configure({
    webClientId: process.env.EXPO_PUBLIC_CLIENT_ID, 
    offlineAccess: true, 

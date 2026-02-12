@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import * as webBrowser from 'expo-web-browser';
 import { statusCodes } from '@react-native-google-signin/google-signin';
 import { auth , GoogleSigninConfig } from '../firebase.config';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebasesignOut, updateProfile , deleteUser} from 'firebase/auth';
 import { useRouter } from "expo-router";
 import authFirebase from '@react-native-firebase/auth';
 import { useStorageState } from "../hooks/useStorage";
@@ -19,6 +18,7 @@ const AuthContext = createContext({
     error : { visible: false, message: '', type: 'info' },
     isLoadingData: false, 
     session : {email : '', displayName : '', photoURL : '', metadata : {} } ,
+    deleteUser : async () => {}
 });
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -42,7 +42,8 @@ export const AuthProvider = ({ children }) => {
           setLoading(true);
              try {
              const { user } = await signInWithEmailAndPassword(auth, email, password);
-             setSession({ ...user})
+             setSession({ ...user});
+             setUser(user)
              router.back();
               } catch (error) {
                setError({ visible: true, message: 'Login failed. Please check your credentials.', type: 'error' });
@@ -64,6 +65,11 @@ export const AuthProvider = ({ children }) => {
                 }
       }
 
+      const signOut = async () => {
+         await firebasesignOut(auth);
+          setSession(null)
+      }
+
     const googelSignIn = async () => {
     setGoogleLoading(true);
     try {
@@ -76,6 +82,7 @@ export const AuthProvider = ({ children }) => {
 
      const {user} = await authFirebase().signInWithCredential(googleCredential);
       setSession({...user})
+      setUser(user)
       setError({ visible: true, message: 'Signed in with Google!', type: 'info' });
 
     } catch (error) {
@@ -97,7 +104,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-return <AuthContext.Provider value={{ user , signIn , signUp , isloading : loading || googleLoading,signOut : async () => {}, error , googelSignIn , isLoadingData  , session}}>
+return <AuthContext.Provider value={{ user , signIn , signUp , isloading : loading || googleLoading, signOut , error , googelSignIn , isLoadingData  , session , deleteUser : deleteUser(user)}}>
         {children}
     </AuthContext.Provider>
 }

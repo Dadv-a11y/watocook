@@ -1,8 +1,7 @@
-import  { useState, useRef } from 'react';
+import  { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
-  Image,
   ImageBackground,
   StyleSheet,
   KeyboardAvoidingView,
@@ -10,18 +9,24 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import Switch from '../components/switch';
 import { Plus, Link, X , Camera, User, Bookmark, ChevronRight, Search, ChefHat } from 'lucide-react-native';
 import { Button } from '../components/button';
 import { Colors, FontSizes, Spacing } from '../constants/style';
 import { useAuth } from '../contest/authContext';
+import { useUpload } from '../hooks/useUpload';
+import Toast from '../components/toast';
 
 const Home = () => {
   const router = useRouter();
   const [mode, setMode] = useState(0); // 0 = ingredient, 1 = video
   const {session} = useAuth();
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
+  const { error , uploadImage} = useUpload();
 
   // Ingredients mode
   const [ingredientText, setIngredientText] = useState('');
@@ -31,8 +36,58 @@ const Home = () => {
   // Video mode
   const [videoLink, setVideoLink] = useState('');
 
-  function handleCameraScan(){
-    // TODO : add picture analyse to permit the user to scan their ingredient
+  // Modal for image source selection
+  const [modalVisible, setModalVisible] = useState(false);
+
+  
+  useEffect (()=>{
+     if(error && error.visible){
+      setToast(error)
+     }
+  },[error])
+
+  async function handleCameraScan() {
+    setModalVisible(true);
+  }
+  
+  async function pickFromCamera() {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (permission.granted === false) {
+      setToast( { visible: true, message: 'Permission denied : Camera permission is required', type: 'error' })
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+    });
+    if (!result.canceled) {
+      const imageUri = result.assets[0].uri;
+
+      const ingredientList =  await uploadImage(imageUri);
+      router.push({ pathname: '/recipe-list', params: { ingredients: JSON.stringify(ingredientList ) } });
+    }
+  }
+
+  async function pickFromGallery() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.granted === false) {
+       setToast( { visible: true, message: 'Permission denied : Media library permission is required', type: 'error' })
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+    });
+    if (!result.canceled) {
+      const imageUri = result.assets[0].uri;
+
+     const ingredientList =  await uploadImage(imageUri);
+      router.push({ pathname: '/recipe-list', params: { ingredients: JSON.stringify(ingredientList ) } });
+    }
   }
 
   function addIngredient() {
@@ -54,12 +109,35 @@ const Home = () => {
       router.push({ pathname: '/recipe-list', params: { ingredients: JSON.stringify(ingredients) } });
     } else {
       if (!videoLink.trim()) return;
-      router.push({ pathname: '/recipe-list', params: { video: videoLink.trim() } });
+      router.push({ pathname: '/recipe-detail', params: { video: videoLink.trim() } });
     }
   }
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Image Source</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={() => { setModalVisible(false); pickFromCamera(); }}>
+              <Camera color={Colors.text} size={24} />
+              <Text style={styles.modalButtonText}>Camera</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={() => { setModalVisible(false); pickFromGallery(); }}>
+              <Text style={styles.modalButtonText}>Gallery</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.headerRowTop}>
           <Text style={styles.brand}>watocook</Text>
@@ -124,16 +202,16 @@ const Home = () => {
                <TouchableOpacity style={styles.plusButton} onPress={handleCameraScan} accessibilityLabel="scan ingredient">
                  <Camera color={Colors.text} strokeWidth={1} size={24}/>
               </TouchableOpacity>
-             
+
             </View>
 
             <View style={styles.chipsRow}>
               {ingredients.map((ing, i) => (
                 <View key={`${ing}-${i}`} style={styles.chip}>
                   <Text style={styles.chipText}>{ing}</Text>
-                  <TouchableOpacity 
-                  onPress={()=>removeIngredient(i)} 
-                  style={styles.chipClose} 
+                  <TouchableOpacity
+                  onPress={()=>removeIngredient(i)}
+                  style={styles.chipClose}
                   accessibilityRole="button"
                   AccessibilityLabel={`Remove ingredient ${ing}`}>
                     <Text style={styles.chipCloseText}>
@@ -172,7 +250,7 @@ const Home = () => {
            Enjoy your cooking, and <Text style={styles.bonAppetitText}> bon appétit!</Text>
           </Text>
         </View>
-
+        <Toast message={toast.message} type={toast.type} visible={toast.visible} onHide={() => setToast({ ...toast, visible: false })} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -412,10 +490,53 @@ const styles = StyleSheet.create({
     alignContent: 'center'
   },
   bonAppetitText:{
-    fontFamily: 'Lora', 
+    fontFamily: 'Lora',
     fontStyle: 'italic',
-    fontWeight: '700', 
+    fontWeight: '700',
     color: Colors.text
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: Colors.background,
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+    color: Colors.text,
+  },
+  modalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    marginVertical: 5,
+    width: '100%',
+    borderRadius: 8,
+    backgroundColor: Colors.icon,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    color: Colors.background,
+    marginLeft: 10,
+  },
+  cancelButton: {
+    padding: 15,
+    marginTop: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: Colors.icon,
   }
 });
 

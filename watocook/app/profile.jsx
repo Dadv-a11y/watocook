@@ -33,6 +33,7 @@ import { Colors, FontSizes, Spacing } from '../constants/style';
 import Toggle from '../components/toogle';
 import Dialog from '../components/dialog';
 import { router } from 'expo-router';
+import {useAuth} from '../contest/authContext'
 
 const Profile = () => {
   const [dietaryPreferences, setDietaryPreferences] = useState({
@@ -48,10 +49,12 @@ const Profile = () => {
   const [spiceLevel, setSpiceLevel] = useState('medium');
   const [portionSize, setPortionSize] = useState('normal');
   const [cookingTime, setCookingTime] = useState('any');
+  const { signOut , deleteUser  } = useAuth()
 
   const handleDeleteAccount = (confirmed) => {
     if (confirmed) {
-      console.log('Account deleted');
+       deleteUser();
+       router.push('/home');
     }
     setShowDeleteDialog(false);
   };
@@ -284,7 +287,7 @@ const Profile = () => {
         </View>
 
         {/* Logout Button */}
-        <Pressable style={styles.logoutButton}>
+        <Pressable style={styles.logoutButton} onPress={signOut}>
           <LogOut size={20} color={Colors.text} />
           <Text style={styles.logoutText}>Log out</Text>
         </Pressable>

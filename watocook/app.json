@@ -14,7 +14,8 @@
     "android": {
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.dadv14.watocook"
+      "package": "com.dadv14.watocook",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -36,6 +37,13 @@
           "dark": {
             "backgroundColor": "#FFFCF9"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission" : "watocook needs access to your camera to take photos of ingredients.",
+          "photosPermission" : "watocook needs access to your photo library to select photos of ingredients."
         }
       ],
       [

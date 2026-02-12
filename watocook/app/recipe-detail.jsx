@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Bookmark, Share2, ChevronLeft,Check, AlarmClock, CookingPot } from 'lucide-react-native';
 import Switch from '../components/switch';
 import { Colors, Spacing, FontSizes } from '../constants/style';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from '../components/toast';
 
 const mockRecipe = {
   title: 'jollof rice',
@@ -28,16 +29,86 @@ const mockRecipe = {
 
 const RecipeDetail = () => {
   const router = useRouter();
+  const { recipeId, video } = useLocalSearchParams();
   const [tab, setTab] = useState(0); // 0 = ingredient, 1 = procedure
   const [bookmarked, setBookmarked] = useState(false);
-  const [ingredients, setIngredients] = useState(mockRecipe.ingredients);
+  const [recipe, setRecipe] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [ingredientsState, setIngredientsState] = useState([]);
+  const [toast , setToast] = useState({ visible: false, message: '', type: 'info' })
+
+  useEffect(() => {
+    const fetchRecipe = async () => {
+      if (video) {
+        try {
+          const response = await fetch('/api/extract-recipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoUrl: video })
+          });
+          if (!response.ok) {
+            setToast({ visible: true, message: 'Failed to extract recipe from video', type: 'error' });
+            setRecipe(mockRecipe);
+            setIngredientsState(mockRecipe.ingredients);
+            setLoading(false);
+            return;
+          }
+          const data = await response.json();
+          const rawRecipe = data.recipe;
+          const transformedRecipe = {
+            title: rawRecipe.title,
+            time: `${rawRecipe.prepTime || '0 min'} prep + ${rawRecipe.cookTime || '0 min'} cook`,
+            serves: `${rawRecipe.servings || 1} serve${(rawRecipe.servings || 1) > 1 ? 's' : ''}`,
+            ingredients: rawRecipe.ingredients.map(ing => {
+              const parts = ing.split(' ');
+              const qty = parts[0];
+              const name = parts.slice(1).join(' ');
+              return { name, qty, have: false };
+            }),
+            steps: rawRecipe.instructions.map((text, index) => ({ id: index + 1, text })),
+            image: require('../assets/images/placeholder.png')
+          };
+          setRecipe(transformedRecipe);
+          setIngredientsState(transformedRecipe.ingredients);
+        } catch (err) {
+          setToast({ visible: true, message: err.message, type: 'error' });
+          setRecipe(mockRecipe);
+          setIngredientsState(mockRecipe.ingredients);
+        } finally {
+          setLoading(false);
+        }
+      } else if (recipeId) {
+        try {
+          const response = await fetch(`/api/get-recipe?recipeId=${recipeId}`);
+          if (!response.ok) {
+            setToast({ visible: true, message: 'Failed to fetch recipe', type: 'error' });
+          }
+          const data = await response.json();
+          setRecipe(data.recipe);
+          setIngredientsState(data.recipe.ingredients);
+        } catch (err) {
+          setToast({ visible: true, message: err.message, type: 'error' });
+          setRecipe(mockRecipe); // Fallback to mock data
+          setIngredientsState(mockRecipe.ingredients);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setRecipe(mockRecipe);
+        setIngredientsState(mockRecipe.ingredients);
+        setLoading(false);
+      }
+    };
+
+    fetchRecipe();
+  }, [recipeId, video]);
 
   function toggleBookmark() {
     setBookmarked((b) => !b);
   }
 
   function toggleHave(i) {
-    setIngredients((prev) => prev.map((it, idx) => (idx === i ? { ...it, have: !it.have } : it)));
+   setIngredientsState((prev) => prev.map((it, idx) => (idx === i ? { ...it, have: !it.have } : it)));
   }
 
   function handleShare() {
@@ -45,11 +116,22 @@ const RecipeDetail = () => {
     try {
       // attempt to use the Web Share API if available
       if (global.navigator && global.navigator.share) {
-        global.navigator.share({ title: mockRecipe.title, text: `Check this recipe: ${mockRecipe.title}` });
+        const title = recipe ? recipe.title : mockRecipe.title;
+        global.navigator.share({ title, text: `Check this recipe: ${title}` });
       }
     } catch (e) {
       console.log('share failed', e);
     }
+  }
+
+   if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loading}>
+          <Text>Loading recipe...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -78,25 +160,25 @@ const RecipeDetail = () => {
             <Switch options={["ingredient", "procedure"]} onChange={(i) => setTab(i)} />
           </View>
 
-          <Text style={styles.title}>{mockRecipe.title}</Text>
+          <Text style={styles.title}>{recipe ? recipe.title : mockRecipe.title}</Text>
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <AlarmClock color={Colors.icon} size={16} />
-              <Text style={styles.metaText}>{mockRecipe.time}</Text>
+              <Text style={styles.metaText}>{recipe ? recipe.time : mockRecipe.time}</Text>
             </View>
             <View style={styles.metaItem}>
               <CookingPot color={Colors.icon} size={16} />
-              <Text style={styles.metaText}>{mockRecipe.serves}</Text>
+              <Text style={styles.metaText}>{recipe ? recipe.serves : mockRecipe.serves}</Text>
             </View>
             <View style={styles.metaItem}>
-              <Text style={styles.metaText}>{mockRecipe.ingredients.length} ingredients</Text>
+              <Text style={styles.metaText}>{ingredientsState.length} ingredients</Text>
             </View>
           </View>
 
           {tab === 0 ? (
             <View style={styles.ingredientsList}>
-              {ingredients.map((it, i) => (
+              {ingredientsState.map((it, i) => (
                 <TouchableOpacity key={i} style={styles.ingredientRow} onPress={() => toggleHave(i)} accessibilityRole="button" accessibilityLabel={it.have ? `you have ${it.name}. click if you don't` : `you don't have ${it.name}. click if you have it`}>
                   <Text style={styles.ingredientName}>{it.name}</Text>
                   <View style={styles.ingredientRight}>
@@ -108,7 +190,7 @@ const RecipeDetail = () => {
             </View>
           ) : (
             <View style={styles.steps}>
-              {mockRecipe.steps.map((s , i) => (
+              {(recipe ? recipe.steps : mockRecipe.steps).map((s , i) => (
                 <View key={s.id} style={styles.stepCard}>
                   <Text style={styles.stepTitle}>step {i+1}</Text>
                   <Text style={styles.stepText}>{s.text}</Text>
@@ -117,6 +199,7 @@ const RecipeDetail = () => {
             </View>
           )}
         </View>
+         <Toast message={toast.message} type={toast.type} visible={toast.visible} onHide={() => setToast({ ...toast, visible: false })} />
       </ScrollView>
     </SafeAreaView>
   );
