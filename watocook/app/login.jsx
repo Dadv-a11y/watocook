@@ -1,22 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, LoaderIcon } from 'lucide-react-native';
 import {Input} from '../components/input';
 import { Button } from '../components/button';
 import { Colors, FontSizes, Spacing } from '../constants/style';
+import Toast from '../components/toast';
+import { useAuth } from '../contest/authContext';
 
 const Login = () => {
-  const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm({ defaultValues: { email: '', password: '' } });
   const [showPassword, setShowPassword] = useState(false);
+  const { isloading , signIn , googelSignIn , error } = useAuth();
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
-  const onSubmit = (data) => {
-    console.log('login', data);
-    // TODO: call API
-    router.push('/home');
-  };
+  useEffect(() => {
+    if (error && error.visible) {
+      setToast(error);
+    }
+  }, [error]);
 
   return (
     <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
@@ -61,8 +63,15 @@ const Login = () => {
           )}
         />
 
-        <Button variant="primary" style={styles.cta} onPress={handleSubmit(onSubmit)}>
-          <Text style={styles.ctaText}>Sign in</Text>
+        <Button variant="primary" style={styles.cta} onPress={handleSubmit(async(data)=>{signIn(data.email , data.password)})} disabled={isloading}>
+          {
+          isloading && <LoaderIcon size={16} className="mr-2" />
+          }
+          <Text style={styles.ctaText}>
+          {
+            isloading ? 'Signing in...' : 'Sign in'
+          }
+          </Text>
         </Button>
 
         <View style={styles.orRow}>
@@ -71,9 +80,11 @@ const Login = () => {
           <View style={styles.line} />
         </View>
 
-        <Button variant="secondary" style={styles.googleBtn} onPress={() => alert('google signin')}>
+        <Button variant="secondary" style={styles.googleBtn} onPress={() => googelSignIn()} disabled={isloading}>
           <Text style={styles.googleText}>Sign in with GOOGLE</Text>
         </Button>
+
+        <Toast message={toast.message} type={toast.type} visible={toast.visible} onHide={() => setToast({ ...toast, visible: false })} />
 
       </ScrollView>
     </KeyboardAvoidingView>
@@ -112,6 +123,9 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingVertical: 14,
     borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   ctaText: {
     color: Colors.background,

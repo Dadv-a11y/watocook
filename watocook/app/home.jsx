@@ -16,10 +16,12 @@ import Switch from '../components/switch';
 import { Plus, Link, X , Camera, User, Bookmark, ChevronRight, Search, ChefHat } from 'lucide-react-native';
 import { Button } from '../components/button';
 import { Colors, FontSizes, Spacing } from '../constants/style';
+import { useAuth } from '../contest/authContext';
 
 const Home = () => {
   const router = useRouter();
   const [mode, setMode] = useState(0); // 0 = ingredient, 1 = video
+  const {session} = useAuth();
 
   // Ingredients mode
   const [ingredientText, setIngredientText] = useState('');
@@ -63,11 +65,11 @@ const Home = () => {
           <Text style={styles.brand}>watocook</Text>
 
         <View style={styles.headerIcons}>
-          <TouchableOpacity onPress={() => router.push('/profile')} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Open profile">
+          <TouchableOpacity onPress={() => !session ? router.push('/login') : router.push('/profile') } style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Open profile">
             <User color={Colors.text} size={20} />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.push('/bookmark')} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Open bookmarks">
+          <TouchableOpacity onPress={() => !session ? router.push('/login') : router.push('/bookmark')} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Open bookmarks">
             <Bookmark color={Colors.text} size={20} />
           </TouchableOpacity>
         </View>
